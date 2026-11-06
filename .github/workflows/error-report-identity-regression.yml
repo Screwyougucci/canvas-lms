@@ -39,7 +39,7 @@ jobs:
         run: docker compose run --rm web ./script/install_assets.sh
 
       - name: Initialize development database
-        run: docker compose run --rm web bundle exec rake db:create db:initial_setup
+        run: docker compose run --rm -e CANVAS_LMS_ADMIN_EMAIL=ci-admin@example.invalid -e CANVAS_LMS_ADMIN_PASSWORD=Canvas-CI-Only-Password-123! web bundle exec rake db:create db:initial_setup
 
       - name: Prepare test database
         run: docker compose run --rm web bundle exec rake db:migrate RAILS_ENV=test
