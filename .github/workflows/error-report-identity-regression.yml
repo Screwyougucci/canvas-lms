@@ -30,7 +30,7 @@ jobs:
           cp config/docker-compose.override.yml.example docker-compose.override.yml
 
       - name: Build Canvas containers
-        run: docker compose build --pull
+        run: docker compose build --pull --build-arg USER_ID=$(id -u)
 
       - name: Prepare web container
         run: docker compose up --no-start web
