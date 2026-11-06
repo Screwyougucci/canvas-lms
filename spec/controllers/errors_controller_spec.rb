@@ -54,6 +54,22 @@ describe ErrorsController do
       expect(ErrorReport.last.data["user_roles"]).to eq("user,student")
     end
 
+    it "does not allow submitted user_id to override the authenticated reporter" do
+      authenticate_user!
+      other_user = User.create!
+
+      post "create", params: {
+        error: {
+          subject: "Synthetic reporter identity test",
+          message: "Testing submitted user_id handling",
+          user_id: other_user.id
+        }
+      }
+
+      report = ErrorReport.order(:id).last
+      expect(report.user_id).to eq(@user.id)
+    end
+
     it "doesnt need authentication" do
       post "create", params: { error: { message: "BigError" } }
       assert_recorded_error
