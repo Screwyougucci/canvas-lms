@@ -1,0 +1,55 @@
+name: Error report identity regression
+
+on:
+  push:
+    branches:
+      - research/error-report-identity-test
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  error-report-identity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - name: Check out fork
+        uses: actions/checkout@v4
+
+      - name: Show runner capacity
+        run: |
+          df -h
+          docker version
+          docker compose version
+
+      - name: Prepare Canvas Docker configuration
+        run: |
+          mkdir -p config
+          cp docker-compose/config/*.yml config/
+          cp config/docker-compose.override.yml.example docker-compose.override.yml
+
+      - name: Build Canvas containers
+        run: docker compose build --pull
+
+      - name: Prepare web container
+        run: docker compose up --no-start web
+
+      - name: Install Canvas assets
+        run: docker compose run --rm web ./script/install_assets.sh
+
+      - name: Initialize development database
+        run: docker compose run --rm web bundle exec rake db:create db:initial_setup
+
+      - name: Prepare test database
+        run: docker compose run --rm web bundle exec rake db:migrate RAILS_ENV=test
+
+      - name: Run focused regression spec
+        run: docker compose run --rm web bundle exec rspec spec/controllers/errors_controller_spec.rb
+
+      - name: Docker diagnostics on failure
+        if: failure()
+        run: |
+          docker compose ps -a || true
+          docker system df || true
+          df -h
